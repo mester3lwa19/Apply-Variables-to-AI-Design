@@ -5,376 +5,184 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Token Mapper</title>
 <style>
-  /* ── Reset & Base ── */
+  /* ── Reset & Light Minimalist Theme ── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #0f0f11;
-    --surface: #1a1a1f;
-    --surface2: #222228;
-    --surface3: #2a2a32;
-    --border: #2e2e38;
-    --border-light: #3a3a46;
-    --accent: #7c6af7;
-    --accent-dim: rgba(124,106,247,0.15);
-    --accent-hover: #9384f9;
-    --green: #3dd68c;
-    --green-dim: rgba(61,214,140,0.12);
-    --amber: #f5a623;
-    --amber-dim: rgba(245,166,35,0.12);
-    --red: #f56565;
-    --text-primary: #e8e8ef;
-    --text-secondary: #8888a0;
-    --text-muted: #55556a;
-    --radius: 8px;
-    --radius-sm: 5px;
+    --bg: #ffffff; 
+    --surface: #ffffff; 
+    --surface2: #f5f5f5; 
+    --surface3: #e8e8e8;
+    --border: #e6e6e6; 
+    --border-light: #f0f0f0;
+    --accent: #18a0fb;
+    --accent-dim: rgba(24, 160, 251, 0.1); 
+    --accent-hover: #0d8de0;
+    --green: #1bc47d; 
+    --green-dim: rgba(27, 196, 125, 0.1);
+    --amber: #ff9d00; 
+    --red: #f24822; 
+    --text-primary: #333333; 
+    --text-secondary: #737373; 
+    --text-muted: #a6a6a6;
+    --radius: 6px; 
+    --radius-sm: 4px;
     --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
-
-  html, body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text-primary);
-    font-size: 12px;
-    line-height: 1.5;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  /* ── Layout ── */
-  #app { display: flex; flex-direction: column; height: 720px; }
+  
+  html, body { font-family: var(--font); background: var(--bg); color: var(--text-primary); font-size: 12px; line-height: 1.5; height: 100vh; overflow: hidden; }
+  #app { display: flex; flex-direction: column; height: 100vh; }
 
   /* ── Header ── */
-  header {
-    padding: 14px 16px 12px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-  }
-  header .logo {
-    width: 28px; height: 28px;
-    background: linear-gradient(135deg, var(--accent), #b06af7);
-    border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; flex-shrink: 0;
-  }
+  header { padding: 14px 16px 12px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  header .logo { width: 28px; height: 28px; background: var(--accent-dim); color: var(--accent); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid rgba(24,160,251,0.2); }
   header h1 { font-size: 13px; font-weight: 600; color: var(--text-primary); }
   header p { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
-  header .scan-btn {
-    margin-left: auto;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius-sm);
-    padding: 7px 14px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s;
-    white-space: nowrap;
-  }
-  header .scan-btn:hover { background: var(--accent-hover); }
-  header .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .header-actions { margin-left: auto; display: flex; gap: 8px; }
+  
+  /* ── Buttons ── */
+  .btn { border: none; border-radius: var(--radius-sm); padding: 7px 14px; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-outline { background: #ffffff; border: 1px solid var(--border); color: var(--text-primary); }
+  .btn-outline:hover:not(:disabled) { background: var(--surface2); }
+  .btn-primary { background: var(--accent); color: #ffffff; font-size: 12px; font-weight: 600; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
 
-  /* ── Tab bar ── */
-  .tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    flex-shrink: 0;
-  }
-  .tab {
-    flex: 1; padding: 10px;
-    text-align: center; font-size: 12px; font-weight: 500;
-    color: var(--text-secondary);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-  }
+  /* ── Tabs & Layout ── */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+  .tab { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .tab:hover { color: var(--text-primary); background: var(--surface2); }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab .badge {
-    background: var(--surface3);
-    color: var(--text-secondary);
-    border-radius: 10px;
-    padding: 1px 6px;
-    font-size: 10px;
-    font-weight: 600;
-  }
-  .tab.active .badge { background: var(--accent-dim); color: var(--accent); }
-
-  /* ── Panel ── */
+  .tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+  .tab .badge { background: var(--surface3); color: var(--text-secondary); border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 600; }
+  .tab.active .badge { background: var(--text-primary); color: #ffffff; }
+  
   .panel { display: none; flex: 1; overflow-y: auto; flex-direction: column; }
   .panel.active { display: flex; }
 
-  /* ── Empty / Loading states ── */
-  .empty-state {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 10px; color: var(--text-muted);
-    padding: 40px 20px; text-align: center;
-  }
-  .empty-state .icon { font-size: 32px; opacity: 0.4; }
-  .empty-state p { font-size: 12px; line-height: 1.6; max-width: 220px; }
+  /* ── Empty State ── */
+  .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-muted); padding: 40px 20px; text-align: center; }
+  .empty-state .icon { font-size: 32px; opacity: 0.3; margin-bottom: 4px; }
+  .empty-state p { font-size: 12px; color: var(--text-secondary); line-height: 1.6; max-width: 260px; }
+  .empty-state .info-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; text-align: left; margin-top: 8px; }
+  .empty-state .info-box strong { color: var(--text-primary); display: block; margin-bottom: 4px; font-size: 11px;}
 
-  /* ── Stats bar ── */
-  .stats-bar {
-    display: flex; gap: 12px;
-    padding: 10px 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+  /* ── Lists & Rows ── */
+  .stats-bar { display: flex; gap: 16px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .stat { display: flex; flex-direction: column; gap: 1px; }
-  .stat-val { font-size: 15px; font-weight: 700; color: var(--text-primary); }
-  .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-
-  /* ── Search ── */
-  .search-bar {
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .search-bar input {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    padding: 6px 10px;
-    font-size: 12px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-  .search-bar input:focus { border-color: var(--accent); }
+  .stat-val { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+  
+  .search-bar { padding: 10px 16px; border-bottom: 1px solid var(--border-light); flex-shrink: 0; background: var(--surface); }
+  .search-bar input { width: 100%; background: var(--surface2); border: 1px solid transparent; border-radius: var(--radius-sm); color: var(--text-primary); padding: 6px 10px; font-size: 12px; outline: none; transition: all 0.15s; }
+  .search-bar input:focus { border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 1px var(--accent-dim); }
   .search-bar input::placeholder { color: var(--text-muted); }
+  
+  .group-list { flex: 1; overflow-y: auto; background: var(--surface); }
 
-  /* ── Group list ── */
-  .group-list { flex: 1; overflow-y: auto; }
-
-  /* ── Token row ── */
-  .token-row {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 0;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.1s;
-  }
-  .token-row:hover { background: var(--surface); }
-
-  .token-left {
-    padding: 12px 12px 12px 16px;
-    display: flex; align-items: flex-start; gap: 10px;
-  }
-
-  /* Color swatch */
-  .swatch {
-    width: 32px; height: 32px;
-    border-radius: var(--radius-sm);
-    border: 1px solid rgba(255,255,255,0.08);
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  /* Font preview */
-  .font-preview {
-    width: 32px; height: 32px;
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; color: var(--accent); font-size: 13px;
-    margin-top: 2px;
-  }
-
+  .token-row { display: grid; grid-template-columns: auto 1fr auto; gap: 0; border-bottom: 1px solid var(--border-light); transition: background 0.1s; }
+  .token-row:hover { background: var(--surface2); }
+  .token-left { padding: 12px 12px 12px 16px; display: flex; align-items: flex-start; gap: 10px; }
+  
+  .color-swatch-large { width: 36px; height: 36px; border-radius: var(--radius-sm); border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); }
+  .opacity-indicator { position: absolute; bottom: 2px; right: 2px; background: rgba(255,255,255,0.9); color: var(--text-primary); font-size: 7px; font-weight: 700; border-radius: 2px; padding: 0 3px; line-height: 1.6; border: 1px solid rgba(0,0,0,0.1); }
+  
+  .font-preview { width: 32px; height: 32px; border-radius: var(--radius-sm); background: #ffffff; border: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--text-primary); font-size: 13px; margin-top: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  
   .token-info { flex: 1; min-width: 0; }
-  .token-title {
-    font-size: 12px; font-weight: 600; color: var(--text-primary);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  .token-title { font-size: 12px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .token-meta { font-size: 10px; color: var(--text-secondary); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .token-meta span { background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; }
+  .token-sample { font-size: 10px; color: var(--text-muted); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; font-style: italic; }
+  
+  .token-count { padding: 12px 16px 12px 0; display: flex; align-items: flex-end; flex-direction: column; gap: 6px; }
+  .count-badge { color: var(--text-secondary); font-size: 10px; font-weight: 500; white-space: nowrap; }
+.select-link { 
+    font-size: 11px; 
+    font-weight: 600; 
+    color: var(--accent); 
+    cursor: pointer; 
+    text-decoration: none; 
+    padding: 4px 8px; 
+    background: var(--accent-dim); 
+    border-radius: var(--radius-sm); 
+    border: none; 
+    transition: all 0.15s ease; 
   }
-  .token-meta {
-    font-size: 10px; color: var(--text-secondary);
-    margin-top: 2px; display: flex; flex-wrap: wrap; gap: 6px;
-  }
-  .token-meta span {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 1px 5px;
-  }
-  .token-sample {
-    font-size: 10px; color: var(--text-muted);
-    margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    max-width: 200px; font-style: italic;
+  .select-link:hover { 
+    background: var(--accent); 
+    color: #ffffff; 
+    text-decoration: none; 
   }
 
-  .token-count {
-    padding: 12px 8px 12px 0;
-    display: flex; align-items: flex-start;
-    flex-direction: column; gap: 4px;
-  }
-  .count-badge {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    border-radius: 10px;
-    padding: 2px 8px;
-    font-size: 10px;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .select-link {
-    font-size: 10px; color: var(--accent);
-    cursor: pointer; text-decoration: none;
-    padding: 0; background: none; border: none;
-    transition: color 0.1s;
-  }
-  .select-link:hover { color: var(--accent-hover); text-decoration: underline; }
-
-  /* ── Style picker ── */
-  .style-picker-wrap {
-    padding: 8px 16px 12px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    display: none;
-  }
+  /* ── Pickers & Inputs ── */
+  .style-picker-wrap { padding: 10px 16px 16px; border-bottom: 1px solid var(--border-light); background: #fafafa; display: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.01); }
   .style-picker-wrap.open { display: block; }
-  .picker-label {
-    font-size: 10px; color: var(--text-muted);
-    text-transform: uppercase; letter-spacing: 0.05em;
-    margin-bottom: 6px;
-  }
+  .picker-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; font-weight: 500; }
   .picker-row { display: flex; gap: 8px; align-items: center; }
-  .style-select {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    font-size: 12px;
-    outline: none;
-    cursor: pointer;
-    transition: border-color 0.15s;
-  }
+  
+  .style-select { flex: 1; background: #ffffff; border: 1px solid var(--border); color: var(--text-primary); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 12px; outline: none; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
   .style-select:focus { border-color: var(--accent); }
-  .apply-btn {
-    background: var(--green);
-    color: #0a1a14;
-    border: none;
-    border-radius: var(--radius-sm);
-    padding: 6px 14px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: opacity 0.15s;
-  }
-  .apply-btn:hover { opacity: 0.85; }
-  .apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .style-select optgroup { font-weight: 600; color: var(--text-secondary); }
+  .style-select option { font-weight: 400; color: var(--text-primary); }
+  
+  .apply-btn { background: var(--text-primary); color: #ffffff; border: none; border-radius: var(--radius-sm); padding: 7px 14px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+  .apply-btn:hover { background: #000000; }
 
-  /* ── Expanded row ── */
-  .token-row.expanded { background: var(--surface); }
-  .token-row-toggle {
-    padding: 0 12px;
-    display: flex; align-items: flex-start;
-    padding-top: 14px; cursor: pointer;
-  }
+  .token-row.expanded { background: var(--surface2); }
+  .token-row-toggle { padding: 0 12px; display: flex; align-items: flex-start; padding-top: 14px; cursor: pointer; }
   .chevron { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; }
   .token-row.expanded .chevron { transform: rotate(90deg); }
 
-  /* ── Toast ── */
-  #toast {
-    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
-    background: var(--surface3);
-    border: 1px solid var(--border-light);
-    color: var(--text-primary);
-    padding: 8px 16px;
-    border-radius: var(--radius);
-    font-size: 12px;
-    font-weight: 500;
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 999;
-  }
-  #toast.show { opacity: 1; }
-  #toast.success { border-color: var(--green); color: var(--green); }
-  #toast.error { border-color: var(--red); color: var(--red); }
+  /* ── Sync Modal ── */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+  .modal { background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius); width: 360px; max-width: 90%; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 16px; }
+  .modal h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0; }
+  .modal p { font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.5; }
+  .options-list { display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 8px; }
+  .checkbox-row { display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; transition: border-color 0.15s; }
+  .checkbox-row:hover { border-color: var(--accent); }
+  .checkbox-row input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+  .checkbox-row label { flex: 1; font-size: 12px; color: var(--text-primary); cursor: pointer; user-select: none; font-weight: 500;}
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+  .sync-warning { font-size: 10px; color: var(--amber); margin-top: -4px; }
 
-  /* ── Progress ── */
-  .progress-bar {
-    height: 2px; background: var(--surface2);
-    overflow: hidden; flex-shrink: 0;
-  }
-  .progress-fill {
-    height: 100%; width: 0;
-    background: linear-gradient(90deg, var(--accent), var(--green));
-    transition: width 0.4s ease;
-  }
+  /* ── UI Indicators ── */
+  #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: #ffffff; padding: 10px 16px; border-radius: var(--radius); font-size: 12px; font-weight: 500; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  #toast.show { opacity: 1; }
+  #toast.success { background: #18221d; color: var(--green); }
+  #toast.error { background: #2b1615; color: var(--red); }
+
+  .progress-bar { height: 2px; background: var(--surface2); overflow: hidden; flex-shrink: 0; }
+  .progress-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.4s ease; }
   .progress-bar.scanning .progress-fill { animation: scan-anim 1s infinite ease-in-out alternate; }
   @keyframes scan-anim { from { width: 20%; } to { width: 80%; } }
 
-  /* ── Applied indicator ── */
-  .applied-tag {
-    display: inline-flex; align-items: center; gap: 3px;
-    background: var(--green-dim);
-    border: 1px solid rgba(61,214,140,0.2);
-    color: var(--green);
-    border-radius: 3px;
-    padding: 1px 5px;
-    font-size: 10px;
-    font-weight: 600;
-  }
-
-  /* ── Color panel specific ── */
-  .color-swatch-large {
-    width: 36px; height: 36px;
-    border-radius: var(--radius-sm);
-    border: 1px solid rgba(255,255,255,0.1);
-    flex-shrink: 0;
-    position: relative;
-  }
-  .opacity-indicator {
-    position: absolute; bottom: 2px; right: 2px;
-    background: rgba(0,0,0,0.6);
-    color: #fff; font-size: 7px; font-weight: 700;
-    border-radius: 2px; padding: 0 3px;
-    line-height: 1.6;
-  }
-
-  /* ─ Scrollbar ─ */
-  ::-webkit-scrollbar { width: 4px; }
+  .applied-tag { display: inline-flex; align-items: center; gap: 4px; background: #ffffff; border: 1px solid var(--green); color: var(--green); border-radius: 3px; padding: 2px 6px; font-size: 10px; font-weight: 600; }
+  
+  ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- Header -->
   <header>
     <div class="logo">🗂</div>
     <div>
       <h1>Token Mapper</h1>
-      <p>Typography &amp; Color → Design System</p>
+      <p>Typography &amp; Color System</p>
     </div>
-    <button class="scan-btn" id="scanBtn" onclick="startScan()">⟳ Scan Page</button>
+    <div class="header-actions">
+      <button class="btn btn-outline" id="syncBtn" onclick="requestSyncOptions()" title="Save styles/variables from your main library file to cache">⤓ Cache Library</button>
+      <button class="btn btn-primary" id="scanBtn" onclick="startScan()">⟳ Scan Document</button>
+    </div>
   </header>
 
-  <!-- Progress bar -->
   <div class="progress-bar" id="progressBar">
     <div class="progress-fill" id="progressFill"></div>
   </div>
 
-  <!-- Tabs -->
   <div class="tabs">
     <div class="tab active" id="tab-text" onclick="switchTab('text')">
       <span>Aa</span> Typography
@@ -386,56 +194,62 @@
     </div>
   </div>
 
-  <!-- ── Typography Panel ── -->
   <div class="panel active" id="panel-text">
     <div class="empty-state" id="emptyText">
       <div class="icon">Aa</div>
-      <p>Click <strong>Scan Page</strong> to discover all text styles and map them to your design system.</p>
+      <p>Click <strong>Scan Document</strong> to discover unstyled text layers.</p>
+      <div class="info-box">
+        <strong>Working across files?</strong> 
+        <span style="color: var(--text-secondary); font-size: 10px;">1. Open your main Design System file<br>2. Click <strong>⤓ Cache Library</strong> above<br>3. Return here and Scan</span>
+      </div>
     </div>
     <div id="textContent" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
       <div class="stats-bar" id="textStats"></div>
-      <div class="search-bar">
-        <input type="text" id="textSearch" placeholder="Filter by font family, size…" oninput="filterText(this.value)" />
-      </div>
+      <div class="search-bar"><input type="text" id="textSearch" placeholder="Filter by font family or size..." oninput="filterText(this.value)" /></div>
       <div class="group-list" id="textList"></div>
     </div>
   </div>
 
-  <!-- ── Color Panel ── -->
   <div class="panel" id="panel-color">
     <div class="empty-state" id="emptyColor">
       <div class="icon">◉</div>
-      <p>Click <strong>Scan Page</strong> to discover all colors and map them to your paint styles.</p>
+      <p>Click <strong>Scan Document</strong> to discover raw colors.</p>
+      <div class="info-box">
+        <strong>Working across files?</strong> 
+        <span style="color: var(--text-secondary); font-size: 10px;">1. Open your main Design System file<br>2. Click <strong>⤓ Cache Library</strong> above<br>3. Return here and Scan</span>
+      </div>
     </div>
     <div id="colorContent" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
       <div class="stats-bar" id="colorStats"></div>
-      <div class="search-bar">
-        <input type="text" id="colorSearch" placeholder="Filter by hex, name…" oninput="filterColor(this.value)" />
-      </div>
+      <div class="search-bar"><input type="text" id="colorSearch" placeholder="Filter by hex code..." oninput="filterColor(this.value)" /></div>
       <div class="group-list" id="colorList"></div>
     </div>
   </div>
 
 </div>
 
-<!-- Toast -->
+<div id="syncModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h3>Select Assets to Cache</h3>
+    <p>Choose which collections and styles from this file you want to save. Unchecked items will not be cached.</p>
+    <div id="syncOptionsList" class="options-list"></div>
+    <p class="sync-warning">Note: Saving will overwrite your currently cached library.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeSyncModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmSync()">Save to Cache</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
 let state = {
-  textGroups: [],
-  colorGroups: [],
-  textStyles: [],
-  paintStyles: [],
-  colorVariables: [], // NEW
-  textFilter: '',
-  colorFilter: '',
-  expandedRows: new Set(),
-  appliedMap: {}, // rowId → 'var|id' or 'style|id'
+  textGroups: [], colorGroups: [], textStyles: [], paintStyles: [], colorVariables: [], 
+  textFilter: '', colorFilter: '', expandedRows: new Set(), appliedMap: {}, 
 };
 
-// ─── Tab switching ────────────────────────────────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -443,13 +257,62 @@ function switchTab(tab) {
   document.getElementById('panel-' + tab).classList.add('active');
 }
 
-// ─── Scan ─────────────────────────────────────────────────────────────────────
 function startScan() {
   const btn = document.getElementById('scanBtn');
-  btn.disabled = true;
-  btn.textContent = '⟳ Scanning…';
+  btn.disabled = true; btn.textContent = '⟳ Scanning…';
   document.getElementById('progressBar').classList.add('scanning');
   parent.postMessage({ pluginMessage: { type: 'SCAN' } }, '*');
+}
+
+// ─── Sync UI Logic ───────────────────────────────────────────────────────────
+
+function requestSyncOptions() {
+  const btn = document.getElementById('syncBtn');
+  btn.disabled = true; btn.textContent = 'Loading...';
+  parent.postMessage({ pluginMessage: { type: 'GET_SYNC_OPTIONS' } }, '*');
+}
+
+function renderSyncModal(options) {
+  const list = document.getElementById('syncOptionsList');
+  list.innerHTML = '';
+  
+  if (!options.hasText && !options.hasPaint && options.collections.length === 0) {
+    list.innerHTML = '<div style="color: var(--amber); padding: 10px; background: #fff5e6; border: 1px solid #ffe0b2; border-radius: 4px;">⚠️ No styles or variables found in this file.</div>';
+  } else {
+    if (options.hasText) {
+      list.innerHTML += `<label class="checkbox-row"><input type="checkbox" id="chk_text" checked> Typography Styles</label>`;
+    }
+    if (options.hasPaint) {
+      list.innerHTML += `<label class="checkbox-row"><input type="checkbox" id="chk_paint" checked> Color Styles</label>`;
+    }
+    options.collections.forEach(c => {
+      list.innerHTML += `<label class="checkbox-row"><input type="checkbox" class="chk_col" value="${c.id}" checked> Collection: ${c.name}</label>`;
+    });
+  }
+  
+  document.getElementById('syncModal').style.display = 'flex';
+}
+
+function closeSyncModal() {
+  document.getElementById('syncModal').style.display = 'none';
+}
+
+function confirmSync() {
+  const syncText = document.getElementById('chk_text') ? document.getElementById('chk_text').checked : false;
+  const syncPaint = document.getElementById('chk_paint') ? document.getElementById('chk_paint').checked : false;
+  
+  const collectionIds = [];
+  document.querySelectorAll('.chk_col').forEach(chk => {
+    if (chk.checked) collectionIds.push(chk.value);
+  });
+
+  closeSyncModal();
+  document.getElementById('progressBar').classList.add('scanning');
+  
+  parent.postMessage({ pluginMessage: { 
+    type: 'SYNC', 
+    options: { syncText, syncPaint, collectionIds } 
+  } }, '*');
 }
 
 // ─── Message handler ──────────────────────────────────────────────────────────
@@ -458,32 +321,44 @@ window.onmessage = (event) => {
   if (!msg) return;
 
   switch (msg.type) {
+    case 'SYNC_OPTIONS_RESULT':
+      document.getElementById('syncBtn').disabled = false;
+      document.getElementById('syncBtn').textContent = '⤓ Cache Library';
+      renderSyncModal(msg.options);
+      break;
+
+    case 'SYNC_RESULT':
+      document.getElementById('progressBar').classList.remove('scanning');
+      if (msg.ok) showToast(`✓ Cached ${msg.count} assets successfully.`, 'success');
+      else showToast('Error caching library: ' + msg.error, 'error');
+      break;
+
     case 'SCAN_RESULT':
+    case 'STYLES_REFRESHED':
       state.textGroups = msg.textGroups || [];
       state.colorGroups = msg.colorGroups || [];
       state.textStyles = msg.textStyles || [];
       state.paintStyles = msg.paintStyles || [];
       state.colorVariables = msg.colorVariables || [];
-      state.expandedRows = new Set();
-      state.appliedMap = {};
-      onScanDone();
-      break;
-
-    case 'STYLES_REFRESHED':
-      state.textStyles = msg.textStyles || [];
-      state.paintStyles = msg.paintStyles || [];
-      state.colorVariables = msg.colorVariables || [];
-      renderText();
-      renderColor();
-      showToast('Styles refreshed', 'success');
+      
+      if (msg.type === 'SCAN_RESULT') {
+        state.expandedRows = new Set();
+        state.appliedMap = {};
+        state.textGroups.forEach(g => { if (g.existingStyleId) state.appliedMap[g.id] = g.existingStyleId; });
+        state.colorGroups.forEach(g => {
+          if (g.existingVarId) state.appliedMap[g.id] = JSON.stringify({ type: 'var', isCached: false, id: g.existingVarId });
+          else if (g.existingStyleId) state.appliedMap[g.id] = JSON.stringify({ type: 'style', isCached: false, id: g.existingStyleId });
+        });
+        onScanDone();
+      } else {
+        renderText(); renderColor();
+        showToast('Styles refreshed', 'success');
+      }
       break;
 
     case 'APPLY_RESULT':
-      if (msg.ok) {
-        showToast(`✓ Applied to ${msg.applied} ${msg.applied === 1 ? 'layer' : 'layers'}`, 'success');
-      } else {
-        showToast('Error: ' + msg.error, 'error');
-      }
+      if (msg.ok) showToast(`✓ Applied to ${msg.applied} layers`, 'success');
+      else showToast('Error: ' + msg.error, 'error');
       break;
   }
 };
@@ -494,80 +369,49 @@ function onScanDone() {
   document.getElementById('progressBar').classList.remove('scanning');
   document.getElementById('progressFill').style.width = '100%';
   setTimeout(() => { document.getElementById('progressFill').style.width = '0'; }, 600);
-
   document.getElementById('badge-text').textContent = state.textGroups.length;
   document.getElementById('badge-color').textContent = state.colorGroups.length;
-
-  renderText();
-  renderColor();
+  renderText(); renderColor();
 }
 
 // ─── Typography render ────────────────────────────────────────────────────────
-function filterText(val) {
-  state.textFilter = val.toLowerCase();
-  renderText();
-}
-
-function filteredTextGroups() {
-  if (!state.textFilter) return state.textGroups;
-  return state.textGroups.filter(g =>
-    g.family.toLowerCase().includes(state.textFilter) ||
-    g.style.toLowerCase().includes(state.textFilter) ||
-    String(g.size).includes(state.textFilter) ||
-    (g.sample || '').toLowerCase().includes(state.textFilter)
-  );
-}
+function filterText(val) { state.textFilter = val.toLowerCase(); renderText(); }
 
 function renderText() {
-  const groups = filteredTextGroups();
-  const empty = document.getElementById('emptyText');
-  const content = document.getElementById('textContent');
+  const groups = state.textFilter ? state.textGroups.filter(g => g.family.toLowerCase().includes(state.textFilter) || String(g.size).includes(state.textFilter)) : state.textGroups;
+  const empty = document.getElementById('emptyText'), content = document.getElementById('textContent'), list = document.getElementById('textList');
 
-  if (state.textGroups.length === 0) {
-    empty.style.display = ''; content.style.display = 'none'; return;
-  }
+  if (state.textGroups.length === 0) { empty.style.display = ''; content.style.display = 'none'; return; }
   empty.style.display = 'none'; content.style.display = 'flex';
+  list.innerHTML = '';
 
   const totalNodes = state.textGroups.reduce((s, g) => s + g.count, 0);
-  document.getElementById('textStats').innerHTML = `
-    <div class="stat"><div class="stat-val">${state.textGroups.length}</div><div class="stat-label">Unique Styles</div></div>
-    <div class="stat"><div class="stat-val">${totalNodes}</div><div class="stat-label">Text Layers</div></div>
-    <div class="stat"><div class="stat-val">${state.textStyles.length}</div><div class="stat-label">Library Styles</div></div>
-  `;
-
-  const list = document.getElementById('textList');
-  list.innerHTML = '';
+  document.getElementById('textStats').innerHTML = `<div class="stat"><div class="stat-val">${state.textGroups.length}</div><div class="stat-label">Unique Styles</div></div><div class="stat"><div class="stat-val">${totalNodes}</div><div class="stat-label">Text Layers</div></div><div class="stat"><div class="stat-val">${state.textStyles.length}</div><div class="stat-label">Available Targets</div></div>`;
 
   groups.forEach(g => {
     const isExpanded = state.expandedRows.has(g.id);
-    const applied = state.appliedMap[g.id];
-    const appliedStyle = applied ? state.textStyles.find(s => s.id === applied) : null;
+    const appliedPayload = state.appliedMap[g.id];
+    let appliedStyle = null;
+    if (appliedPayload) {
+      try {
+         const p = typeof appliedPayload === 'string' && appliedPayload.startsWith('{') ? JSON.parse(appliedPayload) : { id: appliedPayload };
+         appliedStyle = state.textStyles.find(s => s.id === p.id);
+      } catch(e) {}
+    }
 
     const row = document.createElement('div');
     row.className = 'token-row' + (isExpanded ? ' expanded' : '');
-    row.dataset.id = g.id;
-
     row.innerHTML = `
-      <div class="token-row-toggle" onclick="toggleRow('${g.id}')">
-        <span class="chevron">▶</span>
-      </div>
+      <div class="token-row-toggle" onclick="toggleRow('${g.id}')"><span class="chevron">▶</span></div>
       <div class="token-left" onclick="toggleRow('${g.id}')" style="cursor:pointer">
         <div class="font-preview">${g.size}</div>
         <div class="token-info">
           <div class="token-title">${g.family} ${g.style}</div>
-          <div class="token-meta">
-            <span>${g.size}px</span>
-            ${g.lineHeight?.value ? `<span>LH ${Math.round(g.lineHeight.value * 10) / 10}${g.lineHeight.unit === 'PERCENT' ? '%' : 'px'}</span>` : ''}
-            ${g.letterSpacing?.value ? `<span>LS ${Math.round(g.letterSpacing.value * 10) / 10}</span>` : ''}
-            ${appliedStyle ? `<span class="applied-tag">✓ ${appliedStyle.name}</span>` : ''}
-          </div>
+          <div class="token-meta"><span>${g.size}px</span> ${appliedStyle ? `<span class="applied-tag">✓ ${appliedStyle.name}</span>` : ''}</div>
           ${g.sample ? `<div class="token-sample">"${g.sample}"</div>` : ''}
         </div>
       </div>
-      <div class="token-count">
-        <span class="count-badge">${g.count} layer${g.count !== 1 ? 's' : ''}</span>
-        <button class="select-link" onclick='selectNodes(${JSON.stringify(g.nodeIds)})'>Select all</button>
-      </div>
+      <div class="token-count"><span class="count-badge">${g.count}</span><button class="select-link" onclick='selectNodes(${JSON.stringify(g.nodeIds)})'>Select layers</button></div>
     `;
     list.appendChild(row);
 
@@ -581,132 +425,88 @@ function renderText() {
 }
 
 function buildTextPicker(g) {
-  const local = state.textStyles.filter(s => s.isLocal !== false);
-  const lib   = state.textStyles.filter(s => s.isLocal === false);
+  if (state.textStyles.length === 0) return `<div class="picker-label">Map to text style</div><div class="picker-row"><select class="style-select" disabled><option>⚠️ No text styles found in file or cache</option></select></div>`;
 
-  function makeTextOpt(s) {
-    const match = (s.size === g.size && s.family === g.family) ? ' ⭐' : '';
-    const src   = s.isLocal === false ? ' [Lib]' : '';
-    return `<option value="${s.id}">${s.name}${src} — ${s.family} ${s.style} ${s.size}px${match}</option>`;
+  function buildOptGroups(items) {
+    const groups = {};
+    items.forEach(item => {
+      const cat = item.name.includes('/') ? item.name.split('/')[0].trim() : 'General';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(item);
+    });
+
+    let html = '';
+    // Fix applied here: Natural case-insensitive sort for categories
+    const sortedCats = Object.keys(groups).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+
+    sortedCats.forEach(cat => {
+      html += `<optgroup label="${cat}">`;
+      
+      // Fix applied here: Natural case-insensitive sort for items inside the category
+      groups[cat].sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'})).forEach(item => {
+        const payload = JSON.stringify({ id: item.id, isCached: item.isCached });
+        let badge = item.isLocal ? '' : (item.isCached ? ' (Cached)' : ' (Lib)');
+        const displayName = item.name.includes('/') ? item.name.substring(item.name.indexOf('/') + 1).trim() : item.name;
+        html += `<option value='${payload}'>${displayName} — ${item.size}px ${badge}</option>`;
+      });
+      html += `</optgroup>`;
+    });
+    return html;
   }
 
-  const localOpts = local.map(makeTextOpt).join('');
-  const libOpts   = lib.map(makeTextOpt).join('');
-  const libGroup  = lib.length ? `<optgroup label="── Imported Library ──">${libOpts}</optgroup>` : '';
+  let html = '<option value="">— Choose a text style —</option>';
+  html += buildOptGroups(state.textStyles);
 
-  return `
-    <div class="picker-label">Map to text style ${lib.length ? '<span class="lib-count">+' + lib.length + ' library</span>' : ''}</div>
-    <div class="picker-row">
-      <select class="style-select" id="sel-text-${g.id}">
-        <option value="">— Choose a text style —</option>
-        ${localOpts ? '<optgroup label="── Local ──">' + localOpts + '</optgroup>' : ''}
-        ${libGroup}
-      </select>
-      <button class="apply-btn" onclick='applyText("${g.id.replace(/'/g, "&#39;")}", ${JSON.stringify(g.nodeIds)})'>Apply</button>
-    </div>
-  `;
-}
-
-function toggleRow(id) {
-  if (state.expandedRows.has(id)) {
-    state.expandedRows.delete(id);
-  } else {
-    state.expandedRows.add(id);
-  }
-  renderText();
-  renderColor();
+  return `<div class="picker-label">Map to design system</div><div class="picker-row"><select class="style-select" id="sel-text-${g.id}">${html}</select><button class="apply-btn" onclick='applyText("${g.id.replace(/'/g, "&#39;")}", ${JSON.stringify(g.nodeIds)})'>Apply Style</button></div>`;
 }
 
 function applyText(groupId, nodeIds) {
   const sel = document.getElementById('sel-text-' + groupId);
-  if (!sel || !sel.value) { showToast('Please select a style first', 'error'); return; }
+  if (!sel || !sel.value) { showToast('Please select a style', 'error'); return; }
   state.appliedMap[groupId] = sel.value;
-  parent.postMessage({ pluginMessage: { type: 'APPLY_TEXT_STYLE', nodeIds, styleId: sel.value } }, '*');
-  state.expandedRows.delete(groupId);
-  renderText();
+  parent.postMessage({ pluginMessage: { type: 'APPLY_TEXT_STYLE', nodeIds, payload: JSON.parse(sel.value) } }, '*');
+  state.expandedRows.delete(groupId); renderText();
 }
 
 // ─── Color render ─────────────────────────────────────────────────────────────
-function filterColor(val) {
-  state.colorFilter = val.toLowerCase();
-  renderColor();
-}
-
-function filteredColorGroups() {
-  if (!state.colorFilter) return state.colorGroups;
-  return state.colorGroups.filter(g =>
-    (g.hex || '').toLowerCase().includes(state.colorFilter)
-  );
-}
+function filterColor(val) { state.colorFilter = val.toLowerCase(); renderColor(); }
 
 function renderColor() {
-  const groups = filteredColorGroups();
-  const empty = document.getElementById('emptyColor');
-  const content = document.getElementById('colorContent');
+  const groups = state.colorFilter ? state.colorGroups.filter(g => (g.hex || '').toLowerCase().includes(state.colorFilter)) : state.colorGroups;
+  const empty = document.getElementById('emptyColor'), content = document.getElementById('colorContent'), list = document.getElementById('colorList');
 
-  if (state.colorGroups.length === 0) {
-    empty.style.display = ''; content.style.display = 'none'; return;
-  }
-  empty.style.display = 'none'; content.style.display = 'flex';
+  if (state.colorGroups.length === 0) { empty.style.display = ''; content.style.display = 'none'; return; }
+  empty.style.display = 'none'; content.style.display = 'flex'; list.innerHTML = '';
 
   const totalNodes = state.colorGroups.reduce((s, g) => s + g.count, 0);
-  document.getElementById('colorStats').innerHTML = `
-    <div class="stat"><div class="stat-val">${state.colorGroups.length}</div><div class="stat-label">Unique Colors</div></div>
-    <div class="stat"><div class="stat-val">${totalNodes}</div><div class="stat-label">Layers</div></div>
-    <div class="stat"><div class="stat-val">${state.colorVariables.length}</div><div class="stat-label">Variables</div></div>
-  `;
-
-  const list = document.getElementById('colorList');
-  list.innerHTML = '';
+  document.getElementById('colorStats').innerHTML = `<div class="stat"><div class="stat-val">${state.colorGroups.length}</div><div class="stat-label">Unique Colors</div></div><div class="stat"><div class="stat-val">${totalNodes}</div><div class="stat-label">Layers</div></div><div class="stat"><div class="stat-val">${state.colorVariables.length + state.paintStyles.length}</div><div class="stat-label">Available Targets</div></div>`;
 
   groups.forEach(g => {
     const isExpanded = state.expandedRows.has(g.id);
-    const applied = state.appliedMap[g.id];
+    const appliedStr = state.appliedMap[g.id];
     let appliedName = null;
     
-    if (applied) {
-      const [type, ...idParts] = applied.split('|');
-      const id = idParts.join('|');
-      if (type === 'var') {
-        const v = state.colorVariables.find(x => x.id === id);
-        if (v) appliedName = v.name;
-      } else {
-        const s = state.paintStyles.find(x => x.id === id);
-        if (s) appliedName = s.name;
-      }
+    if (appliedStr) {
+      try {
+        const p = JSON.parse(appliedStr);
+        const refList = p.type === 'var' ? state.colorVariables : state.paintStyles;
+        const item = refList.find(x => x.id === p.id);
+        if (item) appliedName = item.name;
+      } catch(e) {}
     }
-
-    const isStroke = g.id.startsWith('stroke_');
-
-    const types = Object.entries(g.nodeTypes || {})
-      .map(([t, c]) => `${c} ${t.toLowerCase()}`)
-      .join(', ');
 
     const row = document.createElement('div');
     row.className = 'token-row' + (isExpanded ? ' expanded' : '');
-    row.dataset.id = g.id;
-
     row.innerHTML = `
-      <div class="token-row-toggle" onclick="toggleColorRow('${g.id}')">
-        <span class="chevron">▶</span>
-      </div>
+      <div class="token-row-toggle" onclick="toggleColorRow('${g.id}')"><span class="chevron">▶</span></div>
       <div class="token-left" onclick="toggleColorRow('${g.id}')" style="cursor:pointer">
-        <div class="color-swatch-large" style="background:${g.hex};opacity:${g.opacity / 100};">
-          ${g.opacity < 100 ? `<div class="opacity-indicator">${g.opacity}%</div>` : ''}
-        </div>
+        <div class="color-swatch-large" style="background:${g.hex};opacity:${g.opacity / 100};">${g.opacity < 100 ? `<div class="opacity-indicator">${g.opacity}%</div>` : ''}</div>
         <div class="token-info">
           <div class="token-title">${g.hex}${g.opacity < 100 ? ` / ${g.opacity}%` : ''}</div>
-          <div class="token-meta">
-            ${isStroke ? '<span>Stroke</span>' : '<span>Fill</span>'}
-            ${types ? `<span>${types}</span>` : ''}
-            ${appliedName ? `<span class="applied-tag">✓ ${appliedName}</span>` : ''}
-          </div>
+          <div class="token-meta"><span>${g.id.startsWith('stroke_') ? 'Stroke' : 'Fill'}</span> ${appliedName ? `<span class="applied-tag">✓ ${appliedName}</span>` : ''}</div>
         </div>
       </div>
-      <div class="token-count">
-        <span class="count-badge">${g.count} layer${g.count !== 1 ? 's' : ''}</span>
-        <button class="select-link" onclick='selectNodes(${JSON.stringify(g.nodeIds)})'>Select all</button>
-      </div>
+      <div class="token-count"><span class="count-badge">${g.count}</span><button class="select-link" onclick='selectNodes(${JSON.stringify(g.nodeIds)})'>Select layers</button></div>
     `;
     list.appendChild(row);
 
@@ -721,73 +521,65 @@ function renderColor() {
 
 function buildColorPicker(g) {
   const isStroke = g.id.startsWith('stroke_');
-  const localStyles = state.paintStyles.filter(s => s.isLocal !== false);
-  const libStyles   = state.paintStyles.filter(s => s.isLocal === false);
-  const localVars   = state.colorVariables.filter(v => v.isLocal !== false);
-  const libVars     = state.colorVariables.filter(v => v.isLocal === false);
 
-  function makeOpt(prefix, item) {
-    const src = item.isLocal === false ? ' [Lib]' : '';
-    return `<option value="${prefix}|${item.id}">${item.name}${src}</option>`;
+  if (state.colorVariables.length === 0 && state.paintStyles.length === 0) {
+    return `<div class="picker-label">Map to design system</div><div class="picker-row"><select class="style-select" disabled><option>⚠️ No variables or styles found</option></select></div>`;
   }
 
-  let optionsHTML = '<option value="">— Choose Target —</option>';
-  if (localVars.length)   optionsHTML += `<optgroup label="── Local Variables ──">${localVars.map(v => makeOpt('var', v)).join('')}</optgroup>`;
-  if (localStyles.length) optionsHTML += `<optgroup label="── Local Styles ──">${localStyles.map(s => makeOpt('style', s)).join('')}</optgroup>`;
-  if (libVars.length)     optionsHTML += `<optgroup label="── Library Variables ──">${libVars.map(v => makeOpt('var', v)).join('')}</optgroup>`;
-  if (libStyles.length)   optionsHTML += `<optgroup label="── Library Styles ──">${libStyles.map(s => makeOpt('style', s)).join('')}</optgroup>`;
+  function buildOptGroups(items, typeLabel, typeValue) {
+    if (!items.length) return '';
+    const groups = {};
+    items.forEach(item => {
+      const cat = item.name.includes('/') ? item.name.split('/')[0].trim() : 'General';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(item);
+    });
 
-  return `
-    <div class="picker-label">Map to design system ${libStyles.length || libVars.length ? '<span class="lib-count">+' + (libStyles.length + libVars.length) + ' library</span>' : ''}</div>
-    <div class="picker-row">
-      <select class="style-select" id="sel-color-${g.id}">
-        ${optionsHTML}
-      </select>
-      <button class="apply-btn" onclick='applyColor("${g.id}", ${JSON.stringify(g.nodeIds)}, ${isStroke})'>Apply</button>
-    </div>
-  `;
-}
+    let html = '';
+    // Fix applied here: Natural case-insensitive sort for categories
+    const sortedCats = Object.keys(groups).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
 
-function toggleColorRow(id) {
-  if (state.expandedRows.has(id)) {
-    state.expandedRows.delete(id);
-  } else {
-    state.expandedRows.add(id);
+    sortedCats.forEach(cat => {
+      html += `<optgroup label="${typeLabel} • ${cat}">`;
+      
+      // Fix applied here: Natural case-insensitive sort for items inside the category
+      groups[cat].sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'})).forEach(item => {
+        const payload = JSON.stringify({ type: typeValue, isCached: item.isCached, id: item.id });
+        let badge = item.isLocal ? '' : (item.isCached ? ' (Cached)' : ' (Lib)');
+        const displayName = item.name.includes('/') ? item.name.substring(item.name.indexOf('/') + 1).trim() : item.name;
+        html += `<option value='${payload}'>${displayName} ${badge}</option>`;
+      });
+      html += `</optgroup>`;
+    });
+    return html;
   }
-  renderColor();
+
+  let html = '<option value="">— Choose Target —</option>';
+  html += buildOptGroups(state.colorVariables, 'Var', 'var');
+  html += buildOptGroups(state.paintStyles, 'Style', 'style');
+
+  return `<div class="picker-label">Map to design system</div><div class="picker-row"><select class="style-select" id="sel-color-${g.id}">${html}</select><button class="apply-btn" onclick='applyColor("${g.id}", ${JSON.stringify(g.nodeIds)}, ${isStroke})'>Apply Token</button></div>`;
 }
+
+function toggleRow(id) { state.expandedRows.has(id) ? state.expandedRows.delete(id) : state.expandedRows.add(id); renderText(); renderColor(); }
+function toggleColorRow(id) { state.expandedRows.has(id) ? state.expandedRows.delete(id) : state.expandedRows.add(id); renderColor(); }
 
 function applyColor(groupId, nodeIds, isStroke) {
   const sel = document.getElementById('sel-color-' + groupId);
-  if (!sel || !sel.value) { showToast('Please select a target first', 'error'); return; }
-  
+  if (!sel || !sel.value) { showToast('Please select a target', 'error'); return; }
   state.appliedMap[groupId] = sel.value;
-  const [type, ...idParts] = sel.value.split('|');
-  const id = idParts.join('|');
-
-  if (type === 'var') {
-    parent.postMessage({ pluginMessage: { type: 'APPLY_VARIABLE', nodeIds, variableId: id, isStroke } }, '*');
-  } else {
-    parent.postMessage({ pluginMessage: { type: 'APPLY_PAINT_STYLE', nodeIds, styleId: id, isStroke } }, '*');
-  }
-  
-  state.expandedRows.delete(groupId);
-  renderColor();
+  const payload = JSON.parse(sel.value);
+  parent.postMessage({ pluginMessage: { type: payload.type === 'var' ? 'APPLY_VARIABLE' : 'APPLY_PAINT_STYLE', nodeIds, payload, isStroke } }, '*');
+  state.expandedRows.delete(groupId); renderColor();
 }
 
-// ─── Select nodes ─────────────────────────────────────────────────────────────
-function selectNodes(nodeIds) {
-  parent.postMessage({ pluginMessage: { type: 'SELECT_NODES', nodeIds } }, '*');
-}
+function selectNodes(nodeIds) { parent.postMessage({ pluginMessage: { type: 'SELECT_NODES', nodeIds } }, '*'); }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
 let toastTimer = null;
 function showToast(msg, type = '') {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'show ' + type;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.className = ''; }, 2500);
+  el.textContent = msg; el.className = 'show ' + type;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.className = ''; }, 2500);
 }
 </script>
 </body>
