@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Token Mapper</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f11;
+    --surface: #1a1a1f;
+    --surface2: #222228;
+    --surface3: #2a2a32;
+    --border: #2e2e38;
+    --border-light: #3a3a46;
+    --accent: #7c6af7;
+    --accent-dim: rgba(124,106,247,0.15);
+    --accent-hover: #9384f9;
+    --green: #3dd68c;
+    --green-dim: rgba(61,214,140,0.12);
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.12);
+    --red: #f56565;
+    --text-primary: #e8e8ef;
+    --text-secondary: #8888a0;
+    --text-muted: #55556a;
+    --radius: 8px;
+    --radius-sm: 5px;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  html, body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 12px;
+    line-height: 1.5;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* ── Layout ── */
+  #app { display: flex; flex-direction: column; height: 720px; }
+
+  /* ── Header ── */
+  header {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  header .logo {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent), #b06af7);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  header h1 { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  header p { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+  header .scan-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  header .scan-btn:hover { background: var(--accent-hover); }
+  header .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Tab bar ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .tab {
+    flex: 1; padding: 10px;
+    text-align: center; font-size: 12px; font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .tab:hover { color: var(--text-primary); background: var(--surface2); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab .badge {
+    background: var(--surface3);
+    color: var(--text-secondary);
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .tab.active .badge { background: var(--accent-dim); color: var(--accent); }
+
+  /* ── Panel ── */
+  .panel { display: none; flex: 1; overflow-y: auto; flex-direction: column; }
+  .panel.active { display: flex; }
+
+  /* ── Empty / Loading states ── */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px; color: var(--text-muted);
+    padding: 40px 20px; text-align: center;
+  }
+  .empty-state .icon { font-size: 32px; opacity: 0.4; }
+  .empty-state p { font-size: 12px; line-height: 1.6; max-width: 220px; }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: flex; gap: 12px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .stat { display: flex; flex-direction: column; gap: 1px; }
+  .stat-val { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* ── Search ── */
+  .search-bar {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .search-bar input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+  .search-bar input::placeholder { color: var(--text-muted); }
+
+  /* ── Group list ── */
+  .group-list { flex: 1; overflow-y: auto; }
+
+  /* ── Token row ── */
+  .token-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .token-row:hover { background: var(--surface); }
+
+  .token-left {
+    padding: 12px 12px 12px 16px;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+
+  /* Color swatch */
+  .swatch {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Font preview */
+  .font-preview {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: var(--accent); font-size: 13px;
+    margin-top: 2px;
+  }
+
+  .token-info { flex: 1; min-width: 0; }
+  .token-title {
+    font-size: 12px; font-weight: 600; color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .token-meta {
+    font-size: 10px; color: var(--text-secondary);
+    margin-top: 2px; display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .token-meta span {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+  .token-sample {
+    font-size: 10px; color: var(--text-muted);
+    margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 200px; font-style: italic;
+  }
+
+  .token-count {
+    padding: 12px 8px 12px 0;
+    display: flex; align-items: flex-start;
+    flex-direction: column; gap: 4px;
+  }
+  .count-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .select-link {
+    font-size: 10px; color: var(--accent);
+    cursor: pointer; text-decoration: none;
+    padding: 0; background: none; border: none;
+    transition: color 0.1s;
+  }
+  .select-link:hover { color: var(--accent-hover); text-decoration: underline; }
+
+  /* ── Style picker ── */
+  .style-picker-wrap {
+    padding: 8px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: none;
+  }
+  .style-picker-wrap.open { display: block; }
+  .picker-label {
+    font-size: 10px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .picker-row { display: flex; gap: 8px; align-items: center; }
+  .style-select {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .style-select:focus { border-color: var(--accent); }
+  .apply-btn {
+    background: var(--green);
+    color: #0a1a14;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .apply-btn:hover { opacity: 0.85; }
+  .apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Expanded row ── */
+  .token-row.expanded { background: var(--surface); }
+  .token-row-toggle {
+    padding: 0 12px;
+    display: flex; align-items: flex-start;
+    padding-top: 14px; cursor: pointer;
+  }
+  .chevron { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; }
+  .token-row.expanded .chevron { transform: rotate(90deg); }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: var(--surface3);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 999;
+  }
+  #toast.show { opacity: 1; }
+  #toast.success { border-color: var(--green); color: var(--green); }
+  #toast.error { border-color: var(--red); color: var(--red); }
+
+  /* ── Progress ── */
+  .progress-bar {
+    height: 2px; background: var(--surface2);
+    overflow: hidden; flex-shrink: 0;
+  }
+  .progress-fill {
+    height: 100%; width: 0;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    transition: width 0.4s ease;
+  }
+  .progress-bar.scanning .progress-fill { animation: scan-anim 1s infinite ease-in-out alternate; }
+  @keyframes scan-anim { from { width: 20%; } to { width: 80%; } }
+
+  /* ── Applied indicator ── */
+  .applied-tag {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: var(--green-dim);
+    border: 1px solid rgba(61,214,140,0.2);
+    color: var(--green);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* ── Color panel specific ── */
+  .color-swatch-large {
+    width: 36px; height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+    position: relative;
+  }
+  .opacity-indicator {
+    position: absolute; bottom: 2px; right: 2px;
+    background: rgba(0,0,0,0.6);
+    color: #fff; font-size: 7px; font-weight: 700;
+    border-radius: 2px; padding: 0 3px;
+    line-height: 1.6;
+  }
+
+  /* ─ Scrollbar ─ */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">🗂</div>
+    <div>
+      <h1>Token Mapper</h1>
+      <p>Typography &amp; Color → Design System</p>
+    </div>
+    <button class="scan-btn" id="scanBtn" onclick="startScan()">⟳ Scan Page</button>
+  </header>
+
+  <!-- Progress bar -->
+  <div class="progress-bar" id="progressBar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" id="tab-text" onclick="switchTab('text')">
+      <span>Aa</span> Typography
+      <span class="badge" id="badge-text">0</span>
+    </div>
+    <div class="tab" id="tab-color" onclick="switchTab('color')">
+      <span>◉</span> Colors
+      <span class="badge" id="badge-color">0</span>
+    </div>
+  </div>
+
+  <!-- ── Typography Panel ── -->
+  <div class="panel active" id="panel-text">
+    <div class="empty-state" id="emptyText">
+      <div class="icon">Aa</div>
+      <p>Click <strong>Scan Page</strong> to discover all text styles and map them to your design system.</p>
+    </div>
+    <div id="textContent" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+      <div class="stats-bar" id="textStats"></div>
+      <div class="search-bar">
+        <input type="text" id="textSearch" placeholder="Filter by font family, size…" oninput="filterText(this.value)" />
+      </div>
+      <div class="group-list" id="textList"></div>
+    </div>
+  </div>
+
+  <!-- ── Color Panel ── -->
+  <div class="panel" id="panel-color">
+    <div class="empty-state" id="emptyColor">
+      <div class="icon">◉</div>
+      <p>Click <strong>Scan Page</strong> to discover all colors and map them to your paint styles.</p>
+    </div>
+    <div id="colorContent" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+      <div class="stats-bar" id="colorStats"></div>
+      <div class="search-bar">
+        <input type="text" id="colorSearch" placeholder="Filter by hex, name…" oninput="filterColor(this.value)" />
+      </div>
+      <div class="group-list" id="colorList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let state = {
+  textGroups: [],
+  colorGroups: [],
+  textStyles: [],
+  paintStyles: [],
+  textFilter: '',
+  colorFilter: '',
+  expandedRows: new Set(),
+  appliedMap: {}, // rowId → styleId applied
+};
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+// ─── Scan ─────────────────────────────────────────────────────────────────────
+function startScan() {
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  btn.textContent = '⟳ Scanning…';
+  document.getElementById('progressBar').classList.add('scanning');
+  parent.postMessage({ pluginMessage: { type: 'SCAN' } }, '*');
+}
+
+// ─── Message handler ──────────────────────────────────────────────────────────
+window.onmessage = (event) => {
+  const msg = event.data.pluginMessage;
+  if (!msg) return;
+
+  switch (msg.type) {
+    case 'SCAN_RESULT':
+      state.textGroups = msg.textGroups || [];
+      state.colorGroups = msg.colorGroups || [];
+      state.textStyles = msg.textStyles || [];
+      state.paintStyles = msg.paintStyles || [];
+      state.expandedRows = new Set();
+      state.appliedMap = {};
+      onScanDone();
+      break;
+
+    case 'STYLES_REFRESHED':
+      state.textStyles = msg.textStyles || [];
+      state.paintStyles = msg.paintStyles || [];
+      renderText();
+      renderColor();
+      showToast('Styles refreshed', 'success');
+      break;
+
+    case 'APPLY_RESULT':
+      if (msg.ok) {
+        showToast(`✓ Applied to ${msg.applied} ${msg.applied === 1 ? 'layer' : 'layers'}`, 'success');
+      } else {
+        showToast('Error: ' + msg.error, 'error');
+      }
+      break;
+  }
+};
+
+function onScanDone() {
+  document.getElementById('scanBtn').disabled = false;
+  document.getElementById('scanBtn').textContent = '⟳ Re-Scan';
+  document.getElementById('progressBar').classList.remove('scanning');
+  document.getElementById('progressFill').style.width = '100%';
+  setTimeout(() => { document.getElementById('progressFill').style.width = '0'; }, 600);
+
+  document.getElementById('badge-text').textContent = state.textGroups.length;
+  document.getElementById('badge-color').textContent = state.colorGroups.length;
+
+  renderText();
+  renderColor();
+}
+
+// ─── Typography render ────────────────────────────────────────────────────────
+function filterText(val) {
+  state.textFilter = val.toLowerCase();
+  renderText();
+}
+
+function filteredTextGroups() {
+  if (!state.textFilter) return state.textGroups;
+  return state.textGroups.filter(g =>
+    g.family.toLowerCase().includes(state.textFilter) ||
+    g.style.toLowerCase().includes(state.textFilter) ||
+    String(g.size).includes(state.textFilter) ||
+    (g.sample || '').toLowerCase().includes(state.textFilter)
+  );
+}
+
+function renderText() {
+  const groups = filteredTextGroups();
+  const empty = document.getElementById('emptyText');
+  const content = document.getElementById('textContent');
+
+  if (state.textGroups.length === 0) {
+    empty.style.display = ''; content.style.display = 'none'; return;
+  }
+  empty.style.display = 'none'; content.style.display = 'flex';
+
+  const totalNodes = state.textGroups.reduce((s, g) => s + g.count, 0);
+  document.getElementById('textStats').innerHTML = `
+    <div class="stat"><div class="stat-val">${state.textGroups.length}</div><div class="stat-label">Unique Styles</div></div>
+    <div class="stat"><div class="stat-val">${totalNodes}</div><div class="stat-label">Text Layers</div></div>
+    <div class="stat"><div class="stat-val">${state.textStyles.length}</div><div class="stat-label">Library Styles</div></div>
+  `;
+
+  const list = document.getElementById('textList');
+  list.innerHTML = '';
+
+  groups.forEach(g => {
+    const isExpanded = state.expandedRows.has(g.id);
+    const applied = state.appliedMap[g.id];
+    const appliedStyle = applied ? state.textStyles.find(s => s.id === applied) : null;
+
+    const row = document.createElement('div');
+    row.className = 'token-row' + (isExpanded ? ' expanded' : '');
+    row.dataset.id = g.id;
+
+    row.innerHTML = `
+      <div class="token-row-toggle" onclick="toggleRow('${g.id}')">
+        <span class="chevron">▶</span>
+      </div>
+      <div class="token-left" onclick="toggleRow('${g.id}')" style="cursor:pointer">
+        <div class="font-preview">${g.size}</div>
+        <div class="token-info">
+          <div class="token-title">${g.family} ${g.style}</div>
+          <div class="token-meta">
+            <span>${g.size}px</span>
+            ${g.lineHeight?.value ? `<span>LH ${Math.round(g.lineHeight.value * 10) / 10}${g.lineHeight.unit === 'PERCENT' ? '%' : 'px'}</span>` : ''}
+            ${g.letterSpacing?.value ? `<span>LS ${Math.round(g.letterSpacing.value * 10) / 10}</span>` : ''}
+            ${appliedStyle ? `<span class="applied-tag">✓ ${appliedStyle.name}</span>` : ''}
+          </div>
+          ${g.sample ? `<div class="token-sample">"${g.sample}"</div>` : ''}
+        </div>
+      </div>
+      <div class="token-count">
+        <span class="count-badge">${g.count} layer${g.count !== 1 ? 's' : ''}</span>
+        <button class="select-link" onclick="selectNodes(${JSON.stringify(g.nodeIds)})">Select all</button>
+      </div>
+    `;
+    list.appendChild(row);
+
+    if (isExpanded) {
+      const picker = document.createElement('div');
+      picker.className = 'style-picker-wrap open';
+      picker.innerHTML = buildTextPicker(g);
+      list.appendChild(picker);
+    }
+  });
+}
+
+function buildTextPicker(g) {
+  const local = state.textStyles.filter(s => s.isLocal !== false);
+  const lib   = state.textStyles.filter(s => s.isLocal === false);
+
+  function makeTextOpt(s) {
+    const match = (s.size === g.size && s.family === g.family) ? ' ⭐' : '';
+    const src   = s.isLocal === false ? ' [Lib]' : '';
+    return `<option value="${s.id}">${s.name}${src} — ${s.family} ${s.style} ${s.size}px${match}</option>`;
+  }
+
+  const localOpts = local.map(makeTextOpt).join('');
+  const libOpts   = lib.map(makeTextOpt).join('');
+  const libGroup  = lib.length ? `<optgroup label="── Imported Library ──">${libOpts}</optgroup>` : '';
+
+  return `
+    <div class="picker-label">Map to text style ${lib.length ? '<span class="lib-count">+' + lib.length + ' library</span>' : ''}</div>
+    <div class="picker-row">
+      <select class="style-select" id="sel-text-${g.id}">
+        <option value="">— Choose a text style —</option>
+        ${localOpts ? '<optgroup label="── Local ──">' + localOpts + '</optgroup>' : ''}
+        ${libGroup}
+      </select>
+      <button class="apply-btn" onclick="applyText('${g.id}', ${JSON.stringify(g.nodeIds)})">Apply</button>
+    </div>
+  `;
+}
+
+function toggleRow(id) {
+  if (state.expandedRows.has(id)) {
+    state.expandedRows.delete(id);
+  } else {
+    state.expandedRows.add(id);
+  }
+  renderText();
+  renderColor();
+}
+
+function applyText(groupId, nodeIds) {
+  const sel = document.getElementById('sel-text-' + groupId);
+  if (!sel || !sel.value) { showToast('Please select a style first', 'error'); return; }
+  state.appliedMap[groupId] = sel.value;
+  parent.postMessage({ pluginMessage: { type: 'APPLY_TEXT_STYLE', nodeIds, styleId: sel.value } }, '*');
+  state.expandedRows.delete(groupId);
+  renderText();
+}
+
+// ─── Color render ─────────────────────────────────────────────────────────────
+function filterColor(val) {
+  state.colorFilter = val.toLowerCase();
+  renderColor();
+}
+
+function filteredColorGroups() {
+  if (!state.colorFilter) return state.colorGroups;
+  return state.colorGroups.filter(g =>
+    (g.hex || '').toLowerCase().includes(state.colorFilter)
+  );
+}
+
+function renderColor() {
+  const groups = filteredColorGroups();
+  const empty = document.getElementById('emptyColor');
+  const content = document.getElementById('colorContent');
+
+  if (state.colorGroups.length === 0) {
+    empty.style.display = ''; content.style.display = 'none'; return;
+  }
+  empty.style.display = 'none'; content.style.display = 'flex';
+
+  const totalNodes = state.colorGroups.reduce((s, g) => s + g.count, 0);
+  document.getElementById('colorStats').innerHTML = `
+    <div class="stat"><div class="stat-val">${state.colorGroups.length}</div><div class="stat-label">Unique Colors</div></div>
+    <div class="stat"><div class="stat-val">${totalNodes}</div><div class="stat-label">Layers</div></div>
+    <div class="stat"><div class="stat-val">${state.paintStyles.length}</div><div class="stat-label">Paint Styles</div></div>
+  `;
+
+  const list = document.getElementById('colorList');
+  list.innerHTML = '';
+
+  groups.forEach(g => {
+    const isExpanded = state.expandedRows.has(g.id);
+    const applied = state.appliedMap[g.id];
+    const appliedStyle = applied ? state.paintStyles.find(s => s.id === applied) : null;
+    const isStroke = g.id.startsWith('stroke_');
+
+    const types = Object.entries(g.nodeTypes || {})
+      .map(([t, c]) => `${c} ${t.toLowerCase()}`)
+      .join(', ');
+
+    const row = document.createElement('div');
+    row.className = 'token-row' + (isExpanded ? ' expanded' : '');
+    row.dataset.id = g.id;
+
+    row.innerHTML = `
+      <div class="token-row-toggle" onclick="toggleColorRow('${g.id}')">
+        <span class="chevron">▶</span>
+      </div>
+      <div class="token-left" onclick="toggleColorRow('${g.id}')" style="cursor:pointer">
+        <div class="color-swatch-large" style="background:${g.hex};opacity:${g.opacity / 100};">
+          ${g.opacity < 100 ? `<div class="opacity-indicator">${g.opacity}%</div>` : ''}
+        </div>
+        <div class="token-info">
+          <div class="token-title">${g.hex}${g.opacity < 100 ? ` / ${g.opacity}%` : ''}</div>
+          <div class="token-meta">
+            ${isStroke ? '<span>Stroke</span>' : '<span>Fill</span>'}
+            ${types ? `<span>${types}</span>` : ''}
+            ${appliedStyle ? `<span class="applied-tag">✓ ${appliedStyle.name}</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="token-count">
+        <span class="count-badge">${g.count} layer${g.count !== 1 ? 's' : ''}</span>
+        <button class="select-link" onclick="selectNodes(${JSON.stringify(g.nodeIds)})">Select all</button>
+      </div>
+    `;
+    list.appendChild(row);
+
+    if (isExpanded) {
+      const picker = document.createElement('div');
+      picker.className = 'style-picker-wrap open';
+      picker.innerHTML = buildColorPicker(g);
+      list.appendChild(picker);
+    }
+  });
+}
+
+function buildColorPicker(g) {
+  const isStroke = g.id.startsWith('stroke_');
+  const local = state.paintStyles.filter(s => s.isLocal !== false);
+  const lib   = state.paintStyles.filter(s => s.isLocal === false);
+
+  function makeColorOpt(s) {
+    const match = s.hex === g.hex ? ' ⭐' : '';
+    const src   = s.isLocal === false ? ' [Lib]' : '';
+    return `<option value="${s.id}">${s.name}${src} — ${s.hex || '—'}${match}</option>`;
+  }
+
+  const localOpts = local.map(makeColorOpt).join('');
+  const libOpts   = lib.map(makeColorOpt).join('');
+  const libGroup  = lib.length ? `<optgroup label="── Imported Library ──">${libOpts}</optgroup>` : '';
+
+  return `
+    <div class="picker-label">Map to paint style ${lib.length ? '<span class="lib-count">+' + lib.length + ' library</span>' : ''}</div>
+    <div class="picker-row">
+      <select class="style-select" id="sel-color-${g.id}">
+        <option value="">— Choose a paint style —</option>
+        ${localOpts ? '<optgroup label="── Local ──">' + localOpts + '</optgroup>' : ''}
+        ${libGroup}
+      </select>
+      <button class="apply-btn" onclick="applyColor('${g.id}', ${JSON.stringify(g.nodeIds)}, ${isStroke})">Apply</button>
+    </div>
+  `;
+}
+
+function toggleColorRow(id) {
+  if (state.expandedRows.has(id)) {
+    state.expandedRows.delete(id);
+  } else {
+    state.expandedRows.add(id);
+  }
+  renderColor();
+}
+
+function applyColor(groupId, nodeIds, isStroke) {
+  const sel = document.getElementById('sel-color-' + groupId);
+  if (!sel || !sel.value) { showToast('Please select a style first', 'error'); return; }
+  state.appliedMap[groupId] = sel.value;
+  parent.postMessage({ pluginMessage: { type: 'APPLY_PAINT_STYLE', nodeIds, styleId: sel.value, isStroke } }, '*');
+  state.expandedRows.delete(groupId);
+  renderColor();
+}
+
+// ─── Select nodes ─────────────────────────────────────────────────────────────
+function selectNodes(nodeIds) {
+  parent.postMessage({ pluginMessage: { type: 'SELECT_NODES', nodeIds } }, '*');
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 2500);
+}
+</script>
+</body>
+</html>
