@@ -428,10 +428,11 @@ let state = {
   colorGroups: [],
   textStyles: [],
   paintStyles: [],
+  colorVariables: [], // NEW
   textFilter: '',
   colorFilter: '',
   expandedRows: new Set(),
-  appliedMap: {}, // rowId → styleId applied
+  appliedMap: {}, // rowId → 'var|id' or 'style|id'
 };
 
 // ─── Tab switching ────────────────────────────────────────────────────────────
@@ -462,6 +463,7 @@ window.onmessage = (event) => {
       state.colorGroups = msg.colorGroups || [];
       state.textStyles = msg.textStyles || [];
       state.paintStyles = msg.paintStyles || [];
+      state.colorVariables = msg.colorVariables || [];
       state.expandedRows = new Set();
       state.appliedMap = {};
       onScanDone();
@@ -470,6 +472,7 @@ window.onmessage = (event) => {
     case 'STYLES_REFRESHED':
       state.textStyles = msg.textStyles || [];
       state.paintStyles = msg.paintStyles || [];
+      state.colorVariables = msg.colorVariables || [];
       renderText();
       renderColor();
       showToast('Styles refreshed', 'success');
@@ -563,7 +566,7 @@ function renderText() {
       </div>
       <div class="token-count">
         <span class="count-badge">${g.count} layer${g.count !== 1 ? 's' : ''}</span>
-        <button class="select-link" onclick="selectNodes(${JSON.stringify(g.nodeIds)})">Select all</button>
+        <button class="select-link" onclick='selectNodes(${JSON.stringify(g.nodeIds)})'>Select all</button>
       </div>
     `;
     list.appendChild(row);
@@ -599,7 +602,7 @@ function buildTextPicker(g) {
         ${localOpts ? '<optgroup label="── Local ──">' + localOpts + '</optgroup>' : ''}
         ${libGroup}
       </select>
-      <button class="apply-btn" onclick="applyText('${g.id}', ${JSON.stringify(g.nodeIds)})">Apply</button>
+      <button class="apply-btn" onclick='applyText("${g.id.replace(/'/g, "&#39;")}", ${JSON.stringify(g.nodeIds)})'>Apply</button>
     </div>
   `;
 }
@@ -650,7 +653,7 @@ function renderColor() {
   document.getElementById('colorStats').innerHTML = `
     <div class="stat"><div class="stat-val">${state.colorGroups.length}</div><div class="stat-label">Unique Colors</div></div>
     <div class="stat"><div class="stat-val">${totalNodes}</div><div class="stat-label">Layers</div></div>
-    <div class="stat"><div class="stat-val">${state.paintStyles.length}</div><div class="stat-label">Paint Styles</div></div>
+    <div class="stat"><div class="stat-val">${state.colorVariables.length}</div><div class="stat-label">Variables</div></div>
   `;
 
   const list = document.getElementById('colorList');
@@ -659,7 +662,20 @@ function renderColor() {
   groups.forEach(g => {
     const isExpanded = state.expandedRows.has(g.id);
     const applied = state.appliedMap[g.id];
-    const appliedStyle = applied ? state.paintStyles.find(s => s.id === applied) : null;
+    let appliedName = null;
+    
+    if (applied) {
+      const [type, ...idParts] = applied.split('|');
+      const id = idParts.join('|');
+      if (type === 'var') {
+        const v = state.colorVariables.find(x => x.id === id);
+        if (v) appliedName = v.name;
+      } else {
+        const s = state.paintStyles.find(x => x.id === id);
+        if (s) appliedName = s.name;
+      }
+    }
+
     const isStroke = g.id.startsWith('stroke_');
 
     const types = Object.entries(g.nodeTypes || {})
@@ -683,13 +699,13 @@ function renderColor() {
           <div class="token-meta">
             ${isStroke ? '<span>Stroke</span>' : '<span>Fill</span>'}
             ${types ? `<span>${types}</span>` : ''}
-            ${appliedStyle ? `<span class="applied-tag">✓ ${appliedStyle.name}</span>` : ''}
+            ${appliedName ? `<span class="applied-tag">✓ ${appliedName}</span>` : ''}
           </div>
         </div>
       </div>
       <div class="token-count">
         <span class="count-badge">${g.count} layer${g.count !== 1 ? 's' : ''}</span>
-        <button class="select-link" onclick="selectNodes(${JSON.stringify(g.nodeIds)})">Select all</button>
+        <button class="select-link" onclick='selectNodes(${JSON.stringify(g.nodeIds)})'>Select all</button>
       </div>
     `;
     list.appendChild(row);
@@ -705,28 +721,29 @@ function renderColor() {
 
 function buildColorPicker(g) {
   const isStroke = g.id.startsWith('stroke_');
-  const local = state.paintStyles.filter(s => s.isLocal !== false);
-  const lib   = state.paintStyles.filter(s => s.isLocal === false);
+  const localStyles = state.paintStyles.filter(s => s.isLocal !== false);
+  const libStyles   = state.paintStyles.filter(s => s.isLocal === false);
+  const localVars   = state.colorVariables.filter(v => v.isLocal !== false);
+  const libVars     = state.colorVariables.filter(v => v.isLocal === false);
 
-  function makeColorOpt(s) {
-    const match = s.hex === g.hex ? ' ⭐' : '';
-    const src   = s.isLocal === false ? ' [Lib]' : '';
-    return `<option value="${s.id}">${s.name}${src} — ${s.hex || '—'}${match}</option>`;
+  function makeOpt(prefix, item) {
+    const src = item.isLocal === false ? ' [Lib]' : '';
+    return `<option value="${prefix}|${item.id}">${item.name}${src}</option>`;
   }
 
-  const localOpts = local.map(makeColorOpt).join('');
-  const libOpts   = lib.map(makeColorOpt).join('');
-  const libGroup  = lib.length ? `<optgroup label="── Imported Library ──">${libOpts}</optgroup>` : '';
+  let optionsHTML = '<option value="">— Choose Target —</option>';
+  if (localVars.length)   optionsHTML += `<optgroup label="── Local Variables ──">${localVars.map(v => makeOpt('var', v)).join('')}</optgroup>`;
+  if (localStyles.length) optionsHTML += `<optgroup label="── Local Styles ──">${localStyles.map(s => makeOpt('style', s)).join('')}</optgroup>`;
+  if (libVars.length)     optionsHTML += `<optgroup label="── Library Variables ──">${libVars.map(v => makeOpt('var', v)).join('')}</optgroup>`;
+  if (libStyles.length)   optionsHTML += `<optgroup label="── Library Styles ──">${libStyles.map(s => makeOpt('style', s)).join('')}</optgroup>`;
 
   return `
-    <div class="picker-label">Map to paint style ${lib.length ? '<span class="lib-count">+' + lib.length + ' library</span>' : ''}</div>
+    <div class="picker-label">Map to design system ${libStyles.length || libVars.length ? '<span class="lib-count">+' + (libStyles.length + libVars.length) + ' library</span>' : ''}</div>
     <div class="picker-row">
       <select class="style-select" id="sel-color-${g.id}">
-        <option value="">— Choose a paint style —</option>
-        ${localOpts ? '<optgroup label="── Local ──">' + localOpts + '</optgroup>' : ''}
-        ${libGroup}
+        ${optionsHTML}
       </select>
-      <button class="apply-btn" onclick="applyColor('${g.id}', ${JSON.stringify(g.nodeIds)}, ${isStroke})">Apply</button>
+      <button class="apply-btn" onclick='applyColor("${g.id}", ${JSON.stringify(g.nodeIds)}, ${isStroke})'>Apply</button>
     </div>
   `;
 }
@@ -742,9 +759,18 @@ function toggleColorRow(id) {
 
 function applyColor(groupId, nodeIds, isStroke) {
   const sel = document.getElementById('sel-color-' + groupId);
-  if (!sel || !sel.value) { showToast('Please select a style first', 'error'); return; }
+  if (!sel || !sel.value) { showToast('Please select a target first', 'error'); return; }
+  
   state.appliedMap[groupId] = sel.value;
-  parent.postMessage({ pluginMessage: { type: 'APPLY_PAINT_STYLE', nodeIds, styleId: sel.value, isStroke } }, '*');
+  const [type, ...idParts] = sel.value.split('|');
+  const id = idParts.join('|');
+
+  if (type === 'var') {
+    parent.postMessage({ pluginMessage: { type: 'APPLY_VARIABLE', nodeIds, variableId: id, isStroke } }, '*');
+  } else {
+    parent.postMessage({ pluginMessage: { type: 'APPLY_PAINT_STYLE', nodeIds, styleId: id, isStroke } }, '*');
+  }
+  
   state.expandedRows.delete(groupId);
   renderColor();
 }
