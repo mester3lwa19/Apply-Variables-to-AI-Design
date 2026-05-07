@@ -96,9 +96,11 @@ async function getSyncOptions() {
 }
 
 async function syncLibraryToCache(options) {
-  var textCache = [];
-  var paintCache = [];
-  var varCache = [];
+  var textCache = [],
+    paintCache = [],
+    varCache = [],
+    floatCache = [],
+    stringCache = [];
 
   try {
     if (options.syncText) {
@@ -145,10 +147,13 @@ async function syncLibraryToCache(options) {
     }
 
     if (options.collectionIds && options.collectionIds.length > 0) {
-      var localVars = await figma.variables.getLocalVariablesAsync("COLOR");
+      var localVars = await figma.variables.getLocalVariablesAsync();
       for (var v = 0; v < localVars.length; v++) {
         if (options.collectionIds.includes(localVars[v].variableCollectionId)) {
-          varCache.push({ name: localVars[v].name, key: localVars[v].key });
+          var vData = { name: localVars[v].name, key: localVars[v].key };
+          if (localVars[v].resolvedType === "COLOR") varCache.push(vData);
+          if (localVars[v].resolvedType === "FLOAT") floatCache.push(vData);
+          if (localVars[v].resolvedType === "STRING") stringCache.push(vData);
         }
       }
     }
@@ -157,10 +162,17 @@ async function syncLibraryToCache(options) {
       textStyles: textCache,
       paintStyles: paintCache,
       colorVariables: varCache,
+      floatVariables: floatCache,
+      stringVariables: stringCache,
     });
     return {
       ok: true,
-      count: textCache.length + paintCache.length + varCache.length,
+      count:
+        textCache.length +
+        paintCache.length +
+        varCache.length +
+        floatCache.length +
+        stringCache.length,
     };
   } catch (e) {
     return { ok: false, error: String(e) };
@@ -214,6 +226,21 @@ function scanDocument() {
             referencedVariableIds[node.boundVariables.strokes[s].id] = true;
         }
       }
+      // Track Typography Variables
+      [
+        "fontSize",
+        "fontFamily",
+        "fontStyle",
+        "lineHeight",
+        "letterSpacing",
+      ].forEach((prop) => {
+        if (
+          node.boundVariables[prop] &&
+          node.boundVariables[prop].type === "VARIABLE_ALIAS"
+        ) {
+          referencedVariableIds[node.boundVariables[prop].id] = true;
+        }
+      });
     }
 
     if (node.type === "TEXT") {
@@ -237,14 +264,30 @@ function scanDocument() {
               count: 0,
               nodeIds: [],
               existingStyleId: null,
+              existingSizeVarId: null,
+              existingFamilyVarId: null,
+              existingLineHeightVarId: null,
             };
           }
           textGroups[key].count++;
           textGroups[key].nodeIds.push(node.id);
+
           var tsId = safeId(node.textStyleId);
           if (tsId) {
             referencedTextStyleIds[tsId] = true;
             textGroups[key].existingStyleId = tsId;
+          }
+
+          if (node.boundVariables) {
+            if (node.boundVariables.fontSize)
+              textGroups[key].existingSizeVarId =
+                node.boundVariables.fontSize.id;
+            if (node.boundVariables.fontFamily)
+              textGroups[key].existingFamilyVarId =
+                node.boundVariables.fontFamily.id;
+            if (node.boundVariables.lineHeight)
+              textGroups[key].existingLineHeightVarId =
+                node.boundVariables.lineHeight.id;
           }
         }
       } catch (e) {}
@@ -363,7 +406,9 @@ async function loadStyles(
 ) {
   var textStyleMap = {},
     paintStyleMap = {},
-    colorVarMap = {};
+    colorVarMap = {},
+    floatVarMap = {},
+    stringVarMap = {};
 
   try {
     var localText = await figma.getLocalTextStylesAsync();
@@ -403,14 +448,12 @@ async function loadStyles(
     });
   } catch (e) {}
   try {
-    var localVars = await figma.variables.getLocalVariablesAsync("COLOR");
+    var localVars = await figma.variables.getLocalVariablesAsync();
     localVars.forEach((cv) => {
-      colorVarMap[cv.id] = {
-        id: cv.id,
-        name: cv.name,
-        isLocal: true,
-        isCached: false,
-      };
+      var vData = { id: cv.id, name: cv.name, isLocal: true, isCached: false };
+      if (cv.resolvedType === "COLOR") colorVarMap[cv.id] = vData;
+      if (cv.resolvedType === "FLOAT") floatVarMap[cv.id] = vData;
+      if (cv.resolvedType === "STRING") stringVarMap[cv.id] = vData;
     });
   } catch (e) {}
 
@@ -460,30 +503,46 @@ async function loadStyles(
     }
   }
   for (var z = 0; z < (referencedVarIds || []).length; z++) {
-    if (!colorVarMap[referencedVarIds[z]]) {
+    if (
+      !colorVarMap[referencedVarIds[z]] &&
+      !floatVarMap[referencedVarIds[z]] &&
+      !stringVarMap[referencedVarIds[z]]
+    ) {
       try {
         var libVar = await figma.variables.getVariableByIdAsync(
           referencedVarIds[z],
         );
-        if (libVar && libVar.resolvedType === "COLOR") {
-          colorVarMap[libVar.id] = {
+        if (libVar) {
+          var vDataLib = {
             id: libVar.id,
             name: libVar.name,
             isLocal: false,
             isCached: false,
           };
+          if (libVar.resolvedType === "COLOR")
+            colorVarMap[libVar.id] = vDataLib;
+          if (libVar.resolvedType === "FLOAT")
+            floatVarMap[libVar.id] = vDataLib;
+          if (libVar.resolvedType === "STRING")
+            stringVarMap[libVar.id] = vDataLib;
         }
       } catch (e) {}
     }
   }
 
-  var cachedData = { textStyles: [], paintStyles: [], colorVariables: [] };
+  var cachedData = {
+    textStyles: [],
+    paintStyles: [],
+    colorVariables: [],
+    floatVariables: [],
+    stringVariables: [],
+  };
   try {
     cachedData =
       (await figma.clientStorage.getAsync("token_mapper_sync")) || cachedData;
   } catch (e) {}
 
-  cachedData.textStyles.forEach((c) => {
+  (cachedData.textStyles || []).forEach((c) => {
     textStyleMap["cached_" + c.key] = {
       id: c.key,
       name: c.name,
@@ -494,7 +553,7 @@ async function loadStyles(
       isCached: true,
     };
   });
-  cachedData.paintStyles.forEach((c) => {
+  (cachedData.paintStyles || []).forEach((c) => {
     paintStyleMap["cached_" + c.key] = {
       id: c.key,
       name: c.name,
@@ -504,8 +563,24 @@ async function loadStyles(
       isCached: true,
     };
   });
-  cachedData.colorVariables.forEach((c) => {
+  (cachedData.colorVariables || []).forEach((c) => {
     colorVarMap["cached_" + c.key] = {
+      id: c.key,
+      name: c.name,
+      isLocal: false,
+      isCached: true,
+    };
+  });
+  (cachedData.floatVariables || []).forEach((c) => {
+    floatVarMap["cached_" + c.key] = {
+      id: c.key,
+      name: c.name,
+      isLocal: false,
+      isCached: true,
+    };
+  });
+  (cachedData.stringVariables || []).forEach((c) => {
+    stringVarMap["cached_" + c.key] = {
       id: c.key,
       name: c.name,
       isLocal: false,
@@ -525,6 +600,8 @@ async function loadStyles(
     textStyles: sortStyles(textStyleMap),
     paintStyles: sortStyles(paintStyleMap),
     colorVariables: sortStyles(colorVarMap),
+    floatVariables: sortStyles(floatVarMap),
+    stringVariables: sortStyles(stringVarMap),
   };
 }
 
@@ -615,6 +692,56 @@ async function applyTextStyle(nodeIds, payload) {
         if ("setTextStyleIdAsync" in node)
           await node.setTextStyleIdAsync(style.id);
         else node.textStyleId = style.id;
+        applied++;
+      } catch (e) {
+        lastError = e.message || String(e);
+      }
+    }
+    return applied === 0 && lastError
+      ? { ok: false, error: lastError }
+      : { ok: true, applied: applied };
+  } catch (err) {
+    return { ok: false, error: err.message || String(err) };
+  }
+}
+
+async function applyTextVariable(nodeIds, payload, propertyName) {
+  try {
+    var variable = await getOrImportVariable(payload);
+    var applied = 0,
+      lastError = null;
+
+    for (var i = 0; i < nodeIds.length; i++) {
+      try {
+        var node = await figma.getNodeByIdAsync(nodeIds[i]);
+        if (!node || node.type !== "TEXT") continue;
+        if (node.hasMissingFont) {
+          lastError = "Layer has a missing font: " + node.name;
+          continue;
+        }
+
+        var fontsToLoad = [];
+        if (node.fontName && node.fontName !== figma.mixed)
+          fontsToLoad.push(node.fontName);
+        else if (node.characters.length > 0)
+          fontsToLoad = fontsToLoad.concat(
+            node.getRangeAllFontNames(0, node.characters.length),
+          );
+
+        for (var f = 0; f < fontsToLoad.length; f++) {
+          try {
+            await figma.loadFontAsync(fontsToLoad[f]);
+          } catch (err) {
+            throw new Error(
+              "Cannot load: " +
+                fontsToLoad[f].family +
+                " " +
+                fontsToLoad[f].style,
+            );
+          }
+        }
+
+        node.setBoundVariable(propertyName, variable);
         applied++;
       } catch (e) {
         lastError = e.message || String(e);
@@ -736,7 +863,7 @@ figma.ui.onmessage = async function (msg) {
       var options = await getSyncOptions();
       figma.ui.postMessage({ type: "SYNC_OPTIONS_RESULT", options: options });
     } else if (msg.type === "SYNC") {
-      figma.ui.postMessage({ type: "SCAN_START" }); // Re-use loading UI
+      figma.ui.postMessage({ type: "SCAN_START" });
       var rSync = await syncLibraryToCache(msg.options);
       figma.ui.postMessage({
         type: "SYNC_RESULT",
@@ -759,6 +886,8 @@ figma.ui.onmessage = async function (msg) {
         textStyles: styles.textStyles,
         paintStyles: styles.paintStyles,
         colorVariables: styles.colorVariables,
+        floatVariables: styles.floatVariables,
+        stringVariables: styles.stringVariables,
       });
     } else if (msg.type === "APPLY_TEXT_STYLE") {
       var r1 = await applyTextStyle(msg.nodeIds, msg.payload);
@@ -767,6 +896,14 @@ figma.ui.onmessage = async function (msg) {
         ok: r1.ok,
         applied: r1.applied,
         error: r1.error,
+      });
+    } else if (msg.type === "APPLY_TEXT_VARIABLE") {
+      var rTV = await applyTextVariable(msg.nodeIds, msg.payload, msg.property);
+      figma.ui.postMessage({
+        type: "APPLY_RESULT",
+        ok: rTV.ok,
+        applied: rTV.applied,
+        error: rTV.error,
       });
     } else if (msg.type === "APPLY_PAINT_STYLE") {
       var r2 = await applyPaintStyle(msg.nodeIds, msg.payload, msg.isStroke);
@@ -783,6 +920,56 @@ figma.ui.onmessage = async function (msg) {
         ok: r3.ok,
         applied: r3.applied,
         error: r3.error,
+      });
+    } else if (msg.type === "BULK_APPLY") {
+      figma.ui.postMessage({ type: "SCAN_START" });
+      var totalApplied = 0;
+      var lastErr = null;
+      for (var o = 0; o < msg.operations.length; o++) {
+        var op = msg.operations[o];
+        var r;
+        if (op.type === "TEXT") {
+          r = await applyTextStyle(op.nodeIds, op.payload);
+        } else if (op.type === "PAINT") {
+          r = await applyPaintStyle(op.nodeIds, op.payload, op.isStroke);
+        } else if (op.type === "VAR") {
+          r = await applyColorVariable(op.nodeIds, op.payload, op.isStroke);
+        }
+
+        if (r && r.ok) totalApplied += r.applied;
+        else if (r && r.error) lastErr = r.error;
+      }
+
+      if (lastErr && totalApplied === 0) {
+        figma.ui.postMessage({
+          type: "APPLY_RESULT",
+          ok: false,
+          error: lastErr,
+          applied: 0,
+        });
+      } else {
+        figma.ui.postMessage({
+          type: "APPLY_RESULT",
+          ok: true,
+          applied: totalApplied,
+        });
+      }
+
+      var freshScan = scanDocument();
+      var freshStyles = await loadStyles(
+        freshScan.referencedTextStyleIds,
+        freshScan.referencedPaintStyleIds,
+        freshScan.referencedVariableIds,
+      );
+      figma.ui.postMessage({
+        type: "STYLES_REFRESHED",
+        textGroups: freshScan.textGroups,
+        colorGroups: freshScan.colorGroups,
+        textStyles: freshStyles.textStyles,
+        paintStyles: freshStyles.paintStyles,
+        colorVariables: freshStyles.colorVariables,
+        floatVariables: freshStyles.floatVariables,
+        stringVariables: freshStyles.stringVariables,
       });
     } else if (msg.type === "SELECT_NODES") {
       await selectNodes(msg.nodeIds);
